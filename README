@@ -1,0 +1,14 @@
+Index the dataset:
+    python main.py --index
+Search the dataset:
+    python main.py --search
+
+Examples:
+    Remove stopwords:
+        python main.py --stopword
+    Stemming:
+        python main.py --stemming
+    Query Example:
+        python main.py --query
+    Index Example:
+        python main.py --index

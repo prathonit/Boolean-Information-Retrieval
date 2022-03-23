@@ -1,10 +1,21 @@
 class TrieNode:
+    """
+    TrieNode Class
+    TrieNode class is a class to represent the trie node data structure
+    It has a children attribute which is a python dictionary and a is_eow to signify if a word
+    ends at that node.
+    """
     def __init__(self):
         self.children = dict()
         self.is_eow = False
 
 
 class Trie:
+    """
+    Trie Class
+    Trie Class is used to represent a Trie data structure. It uses Trie Nodes and connects then in order to form
+    a Trie
+    """
     def __init__(self):
         self.root = self.get_node()
 

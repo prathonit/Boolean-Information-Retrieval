@@ -1,24 +1,36 @@
 import os
 import pickle
 from nltk.corpus import stopwords
-from nltk.tokenize import word_tokenize
+from nltk.tokenize import RegexpTokenizer
 from nltk.stem import PorterStemmer
 from index import InvertedIndex, PermutermIndex
 import config
 
-ps = PorterStemmer()
-
 
 class Dataset:
+    """
+    Dataset class
+    This class handles the information source and is responsible for loading the required text files.
+    It assigns a unique docID (d_id) to each document for easier reference.
+    It also creates a reverse index to get the document from doc_id efficiently
+    The indexes are stored in a .pk file for later usage
+    """
     def __init__(self):
-        self.file_list = os.listdir(config.DATASET_PATH)
+        fs = os.listdir(config.DATASET_PATH)
+        self.file_list = []
+        for f in fs:
+            if f.endswith(".txt"):
+                self.file_list.append(f)
         # assigning a unique id to each file
         # fetching file index
         self.file_index = {}
+        self.inverted_file_index = {}
         self.file_count = 0
         self.load_file_index()
         self.update_file_index()
         self.save_file_index()
+        for key, value in self.file_index.items():
+            self.inverted_file_index[value] = key
 
     def load_file_index(self):
         try:
@@ -41,8 +53,15 @@ class Dataset:
 
 
 class Preprocessor:
+    """
+    Preprocessor class
+    This class helps in processing the dataset input.
+    It removes the stopwords, applies stemming to words and converts the words to lower case.
+    """
     def __init__(self):
-        self.stop_words = stopwords.words('english')
+        self.stop_words = stopwords.words("english")
+        self.ps = PorterStemmer()
+        self.tokenizer = RegexpTokenizer(r"\w+")
 
     def process(self, file):
         try:
@@ -50,7 +69,8 @@ class Preprocessor:
                 tokens = []
                 lines = f.readlines()
                 for line in lines:
-                    w = word_tokenize(line)
+                    w = self.tokenizer.tokenize(line)
+                    w = [x.lower() for x in w]
                     w = self.remove_stopwords(self.stop_words, w)
                     self.stem_words(w)
                     tokens.extend(w)
@@ -67,13 +87,18 @@ class Preprocessor:
                 output.append(word)
         return output
 
-    @staticmethod
-    def stem_words(words):
+    def stem_words(self, words):
         for i in range(len(words)):
-            words[i] = ps.stem(words[i])
+            words[i] = self.ps.stem(words[i])
 
 
 class Crawler:
+    """
+    Crawler Class
+    Crawler class makes use of Dataset class and Preprocessor class to generate the index.
+    It visits each document provided by the Dataset class and Pre-Processes those using PreProcessor class
+    Then it adds the tokens to PermutermIndex and InvertedIndex
+    """
     def __init__(self):
         self.data_set = Dataset()
         self.pre_processor = Preprocessor()
@@ -87,12 +112,7 @@ class Crawler:
             tokens = self.pre_processor.process(file)
             for t in tokens:
                 self.inverted_index.insert_token(t, self.data_set.file_index[file])
-                self.permuterm_index.insert_token(t)
+                self.permuterm_index.insert_token(t + "$")
             i += 1
         self.inverted_index.save_index()
         self.permuterm_index.save_index()
-
-
-c = Crawler()
-c.process()
-print("Finished")
